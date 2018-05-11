@@ -26,7 +26,7 @@ class Interpreter {
         if (this.pos > text.length - 1) return new Token(EOF, null);
 
         let current_char = text[this.pos];
-        if (!isNaN(current_char)) {
+        if ('0' <= current_char && current_char <= '9') {
             this.pos += 1;
             return new Token(INTERGER, Number(current_char));
         }
@@ -68,7 +68,7 @@ function main() {
     process.stdin.setEncoding('utf8');
     process.stdout.write('calc>');
     process.stdin.on('data', function (chunk) {
-        const interpreter = new Interpreter(String(chunk));
+        const interpreter = new Interpreter(String(chunk).slice(0, -2));
         const result = interpreter.expr();
         process.stdout.write(result + '\n');
         process.stdout.write('calc>');

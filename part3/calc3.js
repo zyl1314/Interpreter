@@ -24,7 +24,7 @@ class Interpreter {
 
     advance() {
         this.pos += 1;
-        if (this.pos >= this.text.length) {
+        if (this.pos > this.text.length - 1) {
             this.current_char = undefined;
         } else {
             this.current_char = this.text[this.pos];
@@ -74,6 +74,12 @@ class Interpreter {
         return new Token(EOF, null);
     }
 
+    term() {
+        const token = this.current_token;
+        this.eat(INTERGER);
+        return token.value;
+    }
+
     eat(token_type) {
         if (this.current_token.type === token_type) {
             this.current_token = this.get_next_token();
@@ -85,24 +91,17 @@ class Interpreter {
     expr() {
         this.current_token = this.get_next_token();
 
-        const left = this.current_token;
-        this.eat(INTERGER);
-
-        const op = this.current_token;
-        if (op.type === PLUS) {
-            this.eat(PLUS);
-        } else {
-            this.eat(MINUS);
-        }
-
-        const right = this.current_token;
-        this.eat(INTERGER);
-        
-        let result;
-        if (op.type === PLUS) {
-             result = left.value + right.value;
-        } else {
-             result = left.value - right.value;
+        let result = this.term();
+        while (true) {
+            const token = this.current_token;
+            if (token.type === EOF) break;
+            if (token.type === PLUS) {
+                this.eat(PLUS);
+                result += this.term();
+            } else {
+                this.eat(MINUS);
+                result -= this.term();
+            }
         }
         
         return result;
