@@ -99,30 +99,7 @@ class Lexer {
 
 }
 
-class AST {
-    constructor() {
-
-    }
-}
-
-class Num extends AST {
-    constructor(token) {
-        super();
-        this.token = token;
-        this.value = token.value;
-    }
-}
-
-class BinOp extends AST {
-    constructor(left, op, right) {
-        super();
-        this.left = left;
-        this.token = this.op = op;
-        this.right = right;
-    }
-}
-
-class Parser {
+class Interpreter {
     constructor(lexer) {
         this.lexer = lexer;
         this.current_token = this.lexer.get_next_token();
@@ -144,87 +121,44 @@ class Parser {
         const token = this.current_token;
         if (token.type === INTERGER) {
             this.eat(INTERGER);
-            return new Num(token);
+            return token.value;
         } else if (token.type === LPAREN) {
             this.eat(LPAREN);
-            let node = this.expr();
+            let result = this.expr();
             this.eat(RPAREN);
-            return node;
+            return result;
         }
     }
 
     term() {
-        let node = this.factor();
+        let result = this.factor();
         while (this.current_token.type === MUL || this.current_token.type === DIV) {
             let token = this.current_token;
             if (token.type === MUL) {
                 this.eat(MUL);
+                result *= this.factor();
             } else {
                 this.eat(DIV);
+                result /= this.factor();
             }
-            node = new BinOp(node, token, this.factor());
         }
-        return node;
+        return result;
     }
 
     expr() {
-        let node = this.term();
+        let result = this.term();
         while (this.current_token.type === PLUS || this.current_token.type === MINUS) {
             let token = this.current_token;
             if (token.type === PLUS) {
                 this.eat(PLUS);
+                result += this.term();
             } else {
                 this.eat(MINUS);
+                result -= this.term();
             }
-            node = new BinOp(node, token, this.term());
         }
         
-        return node;
-    }
-
-    parse() {
-        return this.expr();
-    }
-}
-
-class NodeVisistor {
-    constructor() {
-
-    }
-
-    visit(node) {
-        let method_name = `visit_${node.constructor.name}`;
-        let visitor = this[method_name];
-        if (!visitor) throw new Error(`no ${method_name} method`);
-        return visitor(node);
-    }
-}
-
-class Interpreter extends NodeVisistor{
-    constructor(parser) {
-        super();
-        this.parser = parser;
-    }
-
-    visit_BinOp(node) {
-        if (node.op.type === PLUS) {
-            return this.visit(node.left) + this.visit(node.right);
-        } else if (node.op.type === MINUS) {
-            return this.visit(node.left) - this.visit(node.right);
-        } else if (node.op.type === MUL) {
-            return this.visit(node.left) * this.visit(node.right);
-        } else if (node.op.type === DIV) {
-            return this.visit(node.left) / this.visit(node.right);
-        }
-    }
-
-    visit_Num(node) {
-        return node.value;
-    }
-
-    interpreter() {
-        let tree = this.parser.parse();
-        return this.visit(tree);
+        return result;
     }
 }
 
@@ -233,9 +167,8 @@ function main() {
     process.stdout.write('calc>');
     process.stdin.on('data', function (chunk) {
         const lexer = new Lexer(String(chunk).slice(0, -2))
-        const parser = new Parser(lexer);
-        const interger = new Interpreter(parser);
-        const result = interpreter.interpreter();
+        const interpreter = new Interpreter(lexer);
+        const result = interpreter.expr();
         process.stdout.write(result + '\n');
         process.stdout.write('calc>');
     });
